@@ -51,6 +51,10 @@ export default defineConfig(() => {
         },
       }),
     ],
+    build: {
+      outDir: 'docs',
+      emptyOutDir: true,
+    },
     resolve: {
       alias: {
         '@': projectRoot,

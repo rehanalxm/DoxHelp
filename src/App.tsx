@@ -31,7 +31,18 @@ export default function App() {
     setSelectedCategory(category);
   };
 
+  const clearSelectedServices = () => {
+    setSelectedServiceIds([]);
+  };
+
   const toggleSelectedService = (serviceId: string) => {
+    const isActiveService = SERVICE_CATEGORIES.some(
+      (category) =>
+        category.status === 'active' && category.services.some((service) => service.id === serviceId)
+    );
+
+    if (!isActiveService) return;
+
     setSelectedServiceIds((prev) =>
       prev.includes(serviceId) ? prev.filter((id) => id !== serviceId) : [...prev, serviceId]
     );
@@ -48,7 +59,15 @@ export default function App() {
   };
 
   const handleOpenBulkEnquiry = () => {
-    if (selectedServiceIds.length === 0) return;
+    const validSelectedIds = selectedServiceIds.filter((id) =>
+      SERVICE_CATEGORIES.some(
+        (category) =>
+          category.status === 'active' && category.services.some((service) => service.id === id)
+      )
+    );
+
+    if (validSelectedIds.length === 0) return;
+    setSelectedServiceIds(validSelectedIds);
     setSelectedService(null);
     setSelectedCategory(null);
     setEnquiryService(null);
@@ -85,6 +104,7 @@ export default function App() {
           onSelectService={handleSelectService}
           onToggleService={toggleSelectedService}
           onEnquireSelected={handleOpenBulkEnquiry}
+          onClearSelected={clearSelectedServices}
         />
 
         <PaymentSection />
@@ -108,7 +128,12 @@ export default function App() {
           service={enquiryService}
           category={enquiryCategory}
           categories={SERVICE_CATEGORIES}
-          selectedServiceIds={selectedServiceIds}
+          selectedServiceIds={selectedServiceIds.filter((id) =>
+            SERVICE_CATEGORIES.some(
+              (category) =>
+                category.status === 'active' && category.services.some((service) => service.id === id)
+            )
+          )}
           onSelectionChange={setSelectedServiceIds}
           onClose={() => {
             setIsEnquiryModalOpen(false);

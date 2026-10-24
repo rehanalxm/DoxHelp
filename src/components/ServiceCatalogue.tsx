@@ -24,6 +24,7 @@ interface ServiceCatalogueProps {
   onSelectService: (service: ServiceItem, category: ServiceCategory) => void;
   onToggleService: (serviceId: string) => void;
   onEnquireSelected: () => void;
+  onClearSelected: () => void;
 }
 
 export const ServiceCatalogue: React.FC<ServiceCatalogueProps> = ({
@@ -32,8 +33,9 @@ export const ServiceCatalogue: React.FC<ServiceCatalogueProps> = ({
   onSelectService,
   onToggleService,
   onEnquireSelected,
+  onClearSelected,
 }) => {
-  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>('herbalife');
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -256,9 +258,25 @@ export const ServiceCatalogue: React.FC<ServiceCatalogueProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {category.services.map((service) => {
                       const isSelected = selectedServiceIds.includes(service.id);
+                      const canToggle = isActive;
 
                       return (
-                        <div key={service.id} onClick={() => onToggleService(service.id)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleService(service.id);} }} className={`p-3.5 sm:p-4 rounded-2xl border-2 border-zinc-900 text-left transition-all flex flex-col justify-between cursor-pointer ${isActive ? 'bg-white hover:bg-yellow-50/50 shadow-[2px_2px_0px_#18181b] hover:shadow-[4px_4px_0px_#18181b] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none' : 'bg-zinc-50 border-zinc-300 opacity-80 hover:opacity-100'} ${isSelected ? 'ring-2 ring-yellow-300 bg-yellow-50/60' : ''}`}>
+                        <div
+                          key={service.id}
+                          onClick={() => {
+                            if (canToggle) onToggleService(service.id);
+                          }}
+                          role="button"
+                          tabIndex={canToggle ? 0 : -1}
+                          onKeyDown={(e) => {
+                            if (!canToggle) return;
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              onToggleService(service.id);
+                            }
+                          }}
+                          className={`p-3.5 sm:p-4 rounded-2xl border-2 border-zinc-900 text-left transition-all flex flex-col justify-between ${canToggle ? 'cursor-pointer bg-white hover:bg-yellow-50/50 shadow-[2px_2px_0px_#18181b] hover:shadow-[4px_4px_0px_#18181b] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none' : 'bg-zinc-50 border-zinc-300 opacity-80 cursor-default'} ${isSelected ? 'ring-2 ring-yellow-300 bg-yellow-50/60' : ''}`}
+                        >
                           <div>
                             <div className="flex items-start justify-between gap-2 mb-2">
                               <div className="flex-1 min-w-0">
@@ -267,11 +285,12 @@ export const ServiceCatalogue: React.FC<ServiceCatalogueProps> = ({
                               <button
                                 type="button"
                                 aria-label={isSelected ? `Remove ${service.name}` : `Select ${service.name}`}
+                                disabled={!canToggle}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onToggleService(service.id);
+                                  if (canToggle) onToggleService(service.id);
                                 }}
-                                className={`relative flex h-5 w-5 items-center justify-center rounded-md border-2 border-zinc-900 transition-all shrink-0 ${isSelected ? 'bg-zinc-950' : 'bg-white hover:bg-zinc-100'}`}
+                                className={`relative flex h-5 w-5 items-center justify-center rounded-md border-2 border-zinc-900 transition-all shrink-0 ${isSelected ? 'bg-zinc-950' : 'bg-white hover:bg-zinc-100'} ${!canToggle ? 'cursor-not-allowed opacity-50' : ''}`}
                               >
                                 {isSelected && <Check className="h-3.5 w-3.5 text-white stroke-[3]" />}
                               </button>
@@ -322,10 +341,20 @@ export const ServiceCatalogue: React.FC<ServiceCatalogueProps> = ({
 
       {selectedServiceIds.length > 0 && (
         <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 px-4">
-          <button type="button" onClick={onEnquireSelected} className="flex items-center gap-2 rounded-full border-2 border-zinc-900 bg-zinc-950 text-white px-5 py-3 shadow-[4px_4px_0px_#FACC15] font-black text-sm sm:text-base hover:bg-zinc-800 cursor-pointer">
-            <span>Enquire Now</span>
-            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-yellow-300 text-zinc-950 px-1.5 text-xs">{selectedServiceIds.length}</span>
-          </button>
+          <div className="flex items-center gap-2 rounded-full border-2 border-zinc-900 bg-zinc-950 p-1.5 shadow-[4px_4px_0px_#FACC15]">
+            <button type="button" onClick={onEnquireSelected} className="flex items-center gap-2 rounded-full bg-zinc-950 text-white px-4 py-2.5 font-black text-sm sm:text-base hover:bg-zinc-800 cursor-pointer">
+              <span>Enquire Now</span>
+              <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-yellow-300 text-zinc-950 px-1.5 text-xs">{selectedServiceIds.length}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClearSelected}
+              aria-label="Clear selected services"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-zinc-950 border-2 border-zinc-900 hover:bg-zinc-100 cursor-pointer shadow-[2px_2px_0px_#18181b] transition-all"
+            >
+              <X className="h-4 w-4 stroke-[3]" />
+            </button>
+          </div>
         </div>
       )}
     </section>
